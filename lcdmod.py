@@ -129,6 +129,8 @@ def delayms(ms):
 
 class LCD (object):
 
+    BRIGHTNESS=0x20
+
     LCD_RST = 25
     LCD_A0 = 24
     LCD_RED = 18
@@ -137,6 +139,11 @@ class LCD (object):
 
     BIAS_1_9 = 0
     BIAS_1_7 = 1
+
+    STATIC_OFF = 0
+    STATIC_ON_LONG = 1
+    STATIC_ON_SHORT = 2
+    STATIC_ALWAYS_ON = 3
 
     RESISTOR_RATIO = {
             3.0: 0b000,
@@ -157,6 +164,7 @@ class LCD (object):
                  lcd_blue=LCD_BLUE,
                  spi_bus=0,
                  spi_dev=0,
+                 brightness=BRIGHTNESS,
                  adafruit=False,
                  flipped=False):
 
@@ -167,6 +175,7 @@ class LCD (object):
         self.lcd_blue = lcd_blue
         self.spi_bus = spi_bus
         self.spi_dev = spi_dev
+        self.brightness = brightness
         self.adafruit = adafruit
         self.flipped = flipped
 
@@ -224,7 +233,7 @@ class LCD (object):
         delayms(10)
 
         self.regulator_resistor_select(ratio=6.0)
-        self.electronic_volume_mode_set(0x20)
+        self.brightness_set(self.brightness)
 
         LOG.debug('display on')
         self.display_on()
@@ -236,14 +245,14 @@ class LCD (object):
     def clear(self):
         for page in range(8):
             LOG.debug('clear page %d', page)
-            self.page_address_set(page)
+            self.page_set(page)
             self.column_set(0)
             self.send_data([0x00] * 128)
 
-        self.page_address_set(0)
+        self.page_set(0)
         self.column_set(0)
 
-    def page_address_set(self, page):
+    def page_set(self, page):
         if self.pagemap:
             page = self.pagemap[page]
 
@@ -268,7 +277,7 @@ class LCD (object):
         self.send_command([op])
 
     def pos(self, page, col=0):
-        self.page_address_set(page)
+        self.page_set(page)
         self.column_set(col)
 
     def set_pin(self, pin):
@@ -278,12 +287,11 @@ class LCD (object):
         RPIO.output(pin, 0)
 
     def reset(self):
-        LOG.debug('hard reset start')
+        LOG.debug('hard reset')
         self.reset_pin(self.lcd_rst)
         delayms(500)
         self.set_pin(self.lcd_rst)
         delayms(1)
-        LOG.debug('hard reset finished')
 
     def send_command(self, bytes):
         LOG.debug('sending command: %s',
@@ -340,9 +348,9 @@ class LCD (object):
         self.send_command([op])
 
     def power_control_set(self,
-            converter=False,
-            regulator=False,
-            follower=False):
+                          converter=False,
+                          regulator=False,
+                          follower=False):
 
         op = 0b00101000
         op = op | (int(converter) << 2)
@@ -366,6 +374,26 @@ class LCD (object):
     def brightness_set(self, val):
         op = 0b10000001
         self.send_command([op, val])
+
+    def set_static_indicator(self, on=True, mode=STATIC_ALWAYS_ON):
+        if mode not in range(0, 4):
+            raise ValueError(mode)
+
+        op = 0b10101100
+        op = op | int(on)
+        self.send_command([op, mode])
+
+    def sleep(self):
+        self.set_static_indicator(False, mode=self.STATIC_OFF)
+        self.display_off()
+        self.display_points_on()
+
+    def wake(self):
+        self.soft_reset()
+        self.brightness_set(self.brightness)
+        self.display_points_normal()
+        self.display_on()
+        self.set_static_indicator(True)
 
     def putc(self, c):
         bytes = font5x7[ord(c) - 32]
