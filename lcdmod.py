@@ -363,9 +363,9 @@ class LCD (object):
         op = op | line
         self.send_command([op])
 
-    def electronic_volume_mode_set(self, volume):
+    def brightness_set(self, val):
         op = 0b10000001
-        self.send_command([op, volume])
+        self.send_command([op, val])
 
     def putc(self, c):
         bytes = font5x7[ord(c) - 32]
