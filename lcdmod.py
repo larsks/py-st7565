@@ -1,7 +1,7 @@
 import time
 import itertools
 import ctypes
-
+import logging
 
 try:
     import spidev
@@ -9,9 +9,11 @@ except ImportError:
     import stub_spidev as spidev
 
 try:
-    import RPi.GPIO as GPIO
+    import RPIO
 except ImportError:
-    import stub_gpio as GPIO
+    import stub_rpio as RPIO
+
+LOG = logging.getLogger(__name__)
 
 font5x7 = [
     [0x00, 0x00, 0x00, 0x00, 0x00,],
@@ -148,13 +150,15 @@ class LCD (object):
             }
 
     def __init__(self,
-            lcd_rst=LCD_RST,
-            lcd_a0=LCD_A0,
-            lcd_red=LCD_RED,
-            lcd_green=LCD_GREEN,
-            lcd_blue=LCD_BLUE,
-            spi_bus=0,
-            spi_dev=0):
+                 lcd_rst=LCD_RST,
+                 lcd_a0=LCD_A0,
+                 lcd_red=LCD_RED,
+                 lcd_green=LCD_GREEN,
+                 lcd_blue=LCD_BLUE,
+                 spi_bus=0,
+                 spi_dev=0,
+                 adafruit=False,
+                 flipped=False):
 
         self.lcd_rst = lcd_rst
         self.lcd_a0 = lcd_a0
@@ -163,75 +167,133 @@ class LCD (object):
         self.lcd_blue = lcd_blue
         self.spi_bus = spi_bus
         self.spi_dev = spi_dev
+        self.adafruit = adafruit
+        self.flipped = flipped
+
+        if adafruit:
+            self.pagemap = [3, 2, 1, 0, 7, 6, 5, 4]
+        else:
+            self.pagemap = None
+
 
         self.init_gpio()
         self.init_spi()
         self.init_lcd()
 
+#    # XXX: This doesn't actually work as intended.
+#    def __del__(self):
+#        self.all_leds_off()
+
+    def all_leds_off(self):
+        self.rgb(1, 1, 1)
+
+    def all_leds_on(self):
+        self.rgb(0, 0, 0)
+
+    def rgb(self, red, green, blue):
+        RPIO.output(self.lcd_red, red)
+        RPIO.output(self.lcd_green, green)
+        RPIO.output(self.lcd_blue, blue)
+
     def init_gpio(self):
-        GPIO.setmode(GPIO.BCM)
+        RPIO.setmode(RPIO.BCM)
         for pin in [self.lcd_rst, self.lcd_a0]:
-            GPIO.setup(pin, GPIO.OUT, initial=1)
+            RPIO.setup(pin, RPIO.OUT, initial=1)
 
         for pin in [self.lcd_red, self.lcd_green, self.lcd_blue]:
-            GPIO.setup(pin, GPIO.OUT, initial=0)
+            RPIO.setup(pin, RPIO.OUT, initial=0)
 
     def init_spi(self):
         self.spi = spidev.SpiDev()
         self.spi.open(self.spi_bus, self.spi_dev)
 
     def init_lcd(self):
+        self.reset()
         self.soft_reset()
-        self.bias_set(bias=self.BIAS_1_9)
+        self.bias_set(bias=self.BIAS_1_7)
         self.adc_select()
         self.common_output_mode_select()
-        self.display_points_normal()
-        self.display_normal()
+        self.display_start_address_set()
+
+        LOG.debug('power on')
+        self.power_control_set(True, False, False)
+        delayms(50)
+        self.power_control_set(True, True, False)
+        delayms(50)
         self.power_control_set(True, True, True)
-        self.display_start_address_set(32)
+        delayms(10)
+
         self.regulator_resistor_select(ratio=6.0)
-        self.electronic_volume_mode_set(0x30)
+        self.electronic_volume_mode_set(0x20)
+
+        LOG.debug('display on')
         self.display_on()
+        self.display_points_normal()
+
+        LOG.debug('clear')
+        self.clear()
 
     def clear(self):
         for page in range(8):
+            LOG.debug('clear page %d', page)
             self.page_address_set(page)
             self.column_set(0)
-            self.send_data([0] * 128)
+            self.send_data([0x00] * 128)
+
+        self.page_address_set(0)
+        self.column_set(0)
 
     def page_address_set(self, page):
-        op = 0b1011000
+        if self.pagemap:
+            page = self.pagemap[page]
+
+        op = 0b10110000
         op = op | page
         self.send_command([op])
 
     def column_set(self, col):
-        msb = (col & 0xf0) >> 4
-        lsb = (col & 0x0f)
+        if self.adafruit:
+            col += 1
 
-        op = 0b0001000
-        op = op | msb
-        self.send_command([op])
-        op = 0b0000000
+        # set column lsb
+        lsb = (col & 0x0f)
+        op = 0b00000000
         op = op | lsb
         self.send_command([op])
 
+        # set column msb
+        msb = (col & 0xf0) >> 4
+        op = 0b00010000
+        op = op | msb
+        self.send_command([op])
+
+    def pos(self, page, col=0):
+        self.page_address_set(page)
+        self.column_set(col)
+
     def set_pin(self, pin):
-        GPIO.output(pin, 1)
+        RPIO.output(pin, 1)
 
     def reset_pin(self, pin):
-        GPIO.output(pin, 0)
+        RPIO.output(pin, 0)
 
     def reset(self):
+        LOG.debug('hard reset start')
         self.reset_pin(self.lcd_rst)
-        delayms(1)
+        delayms(500)
         self.set_pin(self.lcd_rst)
         delayms(1)
+        LOG.debug('hard reset finished')
 
     def send_command(self, bytes):
+        LOG.debug('sending command: %s',
+                  ' '.join(hex(x) for x in bytes))
         self.reset_pin(self.lcd_a0)
         self.send(bytes)
 
     def send_data(self, bytes):
+        LOG.debug('sending data: %s',
+                  ' '.join(hex(x) for x in bytes))
         self.set_pin(self.lcd_a0)
         self.send(bytes)
 
@@ -270,7 +332,8 @@ class LCD (object):
         self.send_command([op])
 
     def bias_set(self, bias=BIAS_1_9):
-        assert(bias in [self.BIAS_1_9, self.BIAS_1_7])
+        if bias not in [self.BIAS_1_9, self.BIAS_1_7]:
+            raise ValueError(bias)
 
         op = 0b10100010
         op = op | (int(bias))
@@ -293,7 +356,8 @@ class LCD (object):
         self.send_command([op])
 
     def display_start_address_set(self, line=0):
-        assert(line < 64)
+        if line > 64:
+            raise ValueError(line)
 
         op = 0b01000000
         op = op | line
@@ -301,10 +365,23 @@ class LCD (object):
 
     def electronic_volume_mode_set(self, volume):
         op = 0b10000001
-        self.send_command([op])
-        self.send_command([volume])
+        self.send_command([op, volume])
+
+    def putc(self, c):
+        bytes = font5x7[ord(c) - 32]
+
+        if self.flipped:
+            bytes = [int('{:08b}'.format(x)[::-1], 2)
+                     for x in bytes]
+
+        self.send_data(bytes + [0x00])
+
+    def puts(self, s):
+        for c in s:
+            self.putc(c)
 
 
 if __name__ == '__main__':
-    l = LCD()
-
+    logging.basicConfig(
+        level='DEBUG')
+    l = LCD(adafruit=True, flipped=True)
