@@ -1,5 +1,3 @@
-import time
-import itertools
 import ctypes
 import logging
 
