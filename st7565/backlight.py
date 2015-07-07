@@ -51,10 +51,10 @@ class Backlight (object):
         self._set_led(self.pin_red,
                       self.pwm_red,
                       red)
-        self.set_led(self.pin_green,
+        self._set_led(self.pin_green,
                      self.pwm_green,
                      green)
-        self.set_led(self.pin_blue,
+        self._set_led(self.pin_blue,
                      self.pwm_blue,
                      blue)
 
