@@ -20,6 +20,30 @@ commands = {
 
 libc = ctypes.CDLL('libc.so.6')
 
+BRIGHTNESS = 0x20
+
+LCD_RST = 25
+LCD_A0 = 24
+
+BIAS_1_9 = 0
+BIAS_1_7 = 1
+
+STATIC_OFF = 0
+STATIC_ON_LONG = 1
+STATIC_ON_SHORT = 2
+STATIC_ALWAYS_ON = 3
+
+RESISTOR_RATIO = {
+    3.0: 0b000,
+    3.5: 0b001,
+    4.0: 0b010,
+    4.5: 0b011,
+    5.0: 0b100,
+    5.5: 0b101,
+    6.0: 0b110,
+    6.4: 0b111,
+}
+
 
 def delayus(us):
     """ Delay microseconds with libc usleep() using ctypes. """
@@ -32,30 +56,6 @@ def delayms(ms):
 
 
 class LCD (object):
-
-    BRIGHTNESS=0x20
-
-    LCD_RST = 25
-    LCD_A0 = 24
-
-    BIAS_1_9 = 0
-    BIAS_1_7 = 1
-
-    STATIC_OFF = 0
-    STATIC_ON_LONG = 1
-    STATIC_ON_SHORT = 2
-    STATIC_ALWAYS_ON = 3
-
-    RESISTOR_RATIO = {
-            3.0: 0b000,
-            3.5: 0b001,
-            4.0: 0b010,
-            4.5: 0b011,
-            5.0: 0b100,
-            5.5: 0b101,
-            6.0: 0b110,
-            6.4: 0b111,
-            }
 
     def __init__(self,
                  lcd_rst=LCD_RST,
@@ -106,7 +106,7 @@ class LCD (object):
     def init_lcd(self):
         self.reset()
         self.soft_reset()
-        self.bias_set(bias=self.BIAS_1_7)
+        self.bias_set(bias=BIAS_1_7)
         self.adc_select()
         self.common_output_mode_select()
         self.display_start_address_set()
@@ -227,7 +227,7 @@ class LCD (object):
         self.send_command([op])
 
     def bias_set(self, bias=BIAS_1_9):
-        if bias not in [self.BIAS_1_9, self.BIAS_1_7]:
+        if bias not in [BIAS_1_9, BIAS_1_7]:
             raise ValueError(bias)
 
         op = 0b10100010
@@ -247,7 +247,7 @@ class LCD (object):
 
     def regulator_resistor_select(self, ratio=5.0):
         op = 0b00100000
-        op = op | self.RESISTOR_RATIO[ratio]
+        op = op | RESISTOR_RATIO[ratio]
         self.send_command([op])
 
     def display_start_address_set(self, line=0):
@@ -271,7 +271,7 @@ class LCD (object):
         self.send_command([op, mode])
 
     def sleep(self):
-        self.set_static_indicator(False, mode=self.STATIC_OFF)
+        self.set_static_indicator(False, mode=STATIC_OFF)
         self.display_off()
         self.display_points_on()
 
