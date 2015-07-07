@@ -16,10 +16,10 @@ l.puts('world!')
 
 for i in range(2):
     for j in range(100):
-        b.backlight(j/100.0, 0, 0)
+        b.red = j/100.0
         time.sleep(0.01)
     for j in range(100):
-        b.backlight(1-(j/100.0), 0, 0)
+        b.red = 1-(j/100.0)
         time.sleep(0.01)
 
 b.all_leds_on()
