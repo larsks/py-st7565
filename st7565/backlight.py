@@ -1,4 +1,5 @@
-import RPi.GPIO as GPIO
+import RPIO as GPIO
+import RPIO.PWM as PWM
 import logging
 
 LCD_RED = 18
@@ -29,9 +30,9 @@ class Backlight (object):
             GPIO.setup(pin, GPIO.OUT, initial=0)
 
     def init_pwm(self):
-        self.pwm_red = GPIO.PWM(self.pin_red, self.freq)
-        self.pwm_green = GPIO.PWM(self.pin_green, self.freq)
-        self.pwm_blue = GPIO.PWM(self.pin_blue, self.freq)
+        PWM.setup(delay_hw=PWM.DELAY_VIA_PCM)
+        for ch in [0, 1, 2]:
+            PWM.init_channel(ch)
 
     def all_leds_off(self):
         self.backlight(0, 0, 0)
@@ -42,10 +43,10 @@ class Backlight (object):
     def _set_led(self, pin, pwm, val):
         LOG.debug('set LED on pin %d to %s', pin, val)
         if val == 0 or val == 1:
-            pwm.stop()
+            PWM.clear_channel(pwm)
             GPIO.output(pin, 1-int(val))
         else:
-            pwm.start(int((1-val)*100))
+            PWM.add_channel_pulse(pwm, pin, 0, 1999 - int(1999 * val))
 
     @property
     def red(self):
@@ -55,7 +56,7 @@ class Backlight (object):
     def red(self, val):
         self._red = val
         self._set_led(self.pin_red,
-                      self.pwm_red,
+                      0,
                       val)
 
     @property
@@ -66,7 +67,7 @@ class Backlight (object):
     def green(self, val):
         self._green = val
         self._set_led(self.pin_green,
-                      self.pwm_green,
+                      1,
                       val)
 
     @property
@@ -77,7 +78,7 @@ class Backlight (object):
     def blue(self, val):
         self._blue = val
         self._set_led(self.pin_blue,
-                      self.pwm_blue,
+                      2,
                       val)
 
     def backlight(self, red, green, blue):
