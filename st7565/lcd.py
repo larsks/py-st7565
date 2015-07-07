@@ -295,6 +295,15 @@ class LCD (object):
         for c in s:
             self.putc(c)
 
+    def write_buffer(self, buffer):
+        for p in range(8):
+            self.page_set(p)
+            self.column_set(0)
+            bytes = buffer[128*p:128*p+128]
+            bytes = [int('{:08b}'.format(x)[::-1], 2)
+                     for x in bytes]
+            self.send_data(bytes)
+
 
 if __name__ == '__main__':
     logging.basicConfig(
