@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-import logging
 import time
 
 import st7565.backlight
 import st7565.lcd
+import st7565.logo
 
 l = st7565.lcd.LCD(adafruit=True, flipped=True)
 b = st7565.backlight.Backlight()
@@ -14,7 +14,7 @@ l.puts('Hello')
 l.pos(4)
 l.puts('world!')
 
-for i in range(3):
+for i in range(2):
     for j in range(100):
         b.backlight(j/100.0, 0, 0)
         time.sleep(0.01)
@@ -23,3 +23,9 @@ for i in range(3):
         time.sleep(0.01)
 
 b.all_leds_on()
+l.write_buffer(st7565.logo.logo)
+
+for p in range(8):
+    l.pos(p)
+    l.puts('%d ' % p)
+
