@@ -1,15 +1,8 @@
 import ctypes
 import logging
 
-try:
-    import spidev
-except ImportError:
-    spidev = None
-
-try:
-    import RPi.GPIO as GPIO
-except ImportError:
-    GPIO = None
+import spidev
+import RPIO as GPIO
 
 from st7565.fonts.font5x7 import glyphs as font5x7
 
