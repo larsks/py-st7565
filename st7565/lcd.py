@@ -6,12 +6,12 @@ import logging
 try:
     import spidev
 except ImportError:
-    import stub_spidev as spidev
+    spidev = None
 
 try:
-    import RPIO
+    import RPi.GPIO as GPIO
 except ImportError:
-    import stub_rpio as RPIO
+    GPIO = None
 
 LOG = logging.getLogger(__name__)
 
@@ -194,9 +194,9 @@ class LCD (object):
         self.backlight(0, 0, 0)
 
     def init_gpio(self):
-        RPIO.setmode(RPIO.BCM)
+        GPIO.setmode(GPIO.BCM)
         for pin in [self.lcd_rst, self.lcd_a0]:
-            RPIO.setup(pin, RPIO.OUT, initial=1)
+            GPIO.setup(pin, GPIO.OUT, initial=1)
 
     def init_spi(self):
         self.spi = spidev.SpiDev()
@@ -267,10 +267,10 @@ class LCD (object):
         self.column_set(col)
 
     def set_pin(self, pin):
-        RPIO.output(pin, 1)
+        GPIO.output(pin, 1)
 
     def reset_pin(self, pin):
-        RPIO.output(pin, 0)
+        GPIO.output(pin, 0)
 
     def reset(self):
         LOG.debug('hard reset')
