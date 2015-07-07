@@ -1,12 +1,11 @@
 import RPi.GPIO as GPIO
+import logging
 
 LCD_RED = 18
 LCD_GREEN = 22
 LCD_BLUE = 23
 
-CH_RED = 0
-CH_GREEN = 1
-CH_BLUE = 2
+LOG = logging.getLogger(__name__)
 
 
 class Backlight (object):
@@ -41,9 +40,10 @@ class Backlight (object):
         self.backlight(1, 1, 1)
 
     def _set_led(self, pin, pwm, val):
-        if val in [0, 1]:
+        LOG.debug('set LED on pin %d to %s', pin, val)
+        if val == 0 or val == 1:
             pwm.stop()
-            GPIO.output(pin, 1-val)
+            GPIO.output(pin, 1-int(val))
         else:
             pwm.start(int((1-val)*100))
 
@@ -52,11 +52,11 @@ class Backlight (object):
                       self.pwm_red,
                       red)
         self._set_led(self.pin_green,
-                     self.pwm_green,
-                     green)
+                      self.pwm_green,
+                      green)
         self._set_led(self.pin_blue,
-                     self.pwm_blue,
-                     blue)
+                      self.pwm_blue,
+                      blue)
 
 
 if __name__ == '__main__':
