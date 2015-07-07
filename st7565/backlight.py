@@ -31,6 +31,7 @@ class Backlight (object):
 
     def init_pwm(self):
         PWM.setup(delay_hw=PWM.DELAY_VIA_PCM)
+        PWM.set_loglevel(PWM.LOG_LEVEL_ERRORS)
         for ch in [0, 1, 2]:
             PWM.init_channel(ch)
 
