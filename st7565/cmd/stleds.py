@@ -58,10 +58,12 @@ def main():
     elif args.all_leds is False:
         leds.all_leds_off()
     elif args.rgb:
-        args.wait = True
         for i, attr in enumerate(('red', 'green', 'blue')):
             if args.rgb[i] != '-':
-                setattr(leds, attr, float(args.rgb[i]))
+                val = float(args.rgb[i])
+                setattr(leds, attr, val)
+                if val > 0 and val < 1:
+                    args.wait = True
 
     if args.wait:
         while True:
