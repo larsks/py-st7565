@@ -47,17 +47,43 @@ class Backlight (object):
         else:
             pwm.start(int((1-val)*100))
 
-    def backlight(self, red, green, blue):
+    @property
+    def red(self):
+        return self._red
+
+    @red.setter
+    def red(self, val):
+        self._red = val
         self._set_led(self.pin_red,
                       self.pwm_red,
-                      red)
+                      val)
+
+    @property
+    def green(self):
+        return self._green
+
+    @green.setter
+    def green(self, val):
+        self._green = val
         self._set_led(self.pin_green,
                       self.pwm_green,
-                      green)
+                      val)
+
+    @property
+    def blue(self):
+        return self._blue
+
+    @blue.setter
+    def blue(self, val):
+        self._blue = val
         self._set_led(self.pin_blue,
                       self.pwm_blue,
-                      blue)
+                      val)
 
+    def backlight(self, red, green, blue):
+        self.red = red
+        self.green = green
+        self.blue = blue
 
 if __name__ == '__main__':
 
