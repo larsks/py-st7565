@@ -15,6 +15,9 @@ except ImportError:
 
 LOG = logging.getLogger(__name__)
 
+commands = {
+}
+
 font5x7 = [
     [0x00, 0x00, 0x00, 0x00, 0x00,],
     [0x00, 0x00, 0x5F, 0x00, 0x00,],
@@ -133,9 +136,6 @@ class LCD (object):
 
     LCD_RST = 25
     LCD_A0 = 24
-    LCD_RED = 18
-    LCD_GREEN = 22
-    LCD_BLUE = 23
 
     BIAS_1_9 = 0
     BIAS_1_7 = 1
@@ -159,9 +159,6 @@ class LCD (object):
     def __init__(self,
                  lcd_rst=LCD_RST,
                  lcd_a0=LCD_A0,
-                 lcd_red=LCD_RED,
-                 lcd_green=LCD_GREEN,
-                 lcd_blue=LCD_BLUE,
                  spi_bus=0,
                  spi_dev=0,
                  brightness=BRIGHTNESS,
@@ -170,9 +167,6 @@ class LCD (object):
 
         self.lcd_rst = lcd_rst
         self.lcd_a0 = lcd_a0
-        self.lcd_red = lcd_red
-        self.lcd_green = lcd_green
-        self.lcd_blue = lcd_blue
         self.spi_bus = spi_bus
         self.spi_dev = spi_dev
         self.brightness = brightness
@@ -194,23 +188,15 @@ class LCD (object):
 #        self.all_leds_off()
 
     def all_leds_off(self):
-        self.rgb(1, 1, 1)
+        self.backlight(1, 1, 1)
 
     def all_leds_on(self):
-        self.rgb(0, 0, 0)
-
-    def rgb(self, red, green, blue):
-        RPIO.output(self.lcd_red, red)
-        RPIO.output(self.lcd_green, green)
-        RPIO.output(self.lcd_blue, blue)
+        self.backlight(0, 0, 0)
 
     def init_gpio(self):
         RPIO.setmode(RPIO.BCM)
         for pin in [self.lcd_rst, self.lcd_a0]:
             RPIO.setup(pin, RPIO.OUT, initial=1)
-
-        for pin in [self.lcd_red, self.lcd_green, self.lcd_blue]:
-            RPIO.setup(pin, RPIO.OUT, initial=0)
 
     def init_spi(self):
         self.spi = spidev.SpiDev()
