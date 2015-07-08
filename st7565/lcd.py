@@ -1,11 +1,11 @@
 import ctypes
 import logging
 
-import spidev
 import RPIO as GPIO
 
+import st7565.spidev
+import st7565.ops
 from st7565.fonts.font5x7 import glyphs as font5x7
-from st7565.ops import *
 
 LOG = logging.getLogger(__name__)
 
@@ -87,8 +87,7 @@ class LCD (object):
             GPIO.setup(pin, GPIO.OUT, initial=1)
 
     def init_spi(self):
-        self.spi = spidev.SpiDev()
-        self.spi.open(self.spi_bus, self.spi_dev)
+        self.spi = st7565.spidev.SpiDev(self.spi_bus, self.spi_dev)
 
     def init_lcd(self):
         self.reset()
@@ -131,7 +130,7 @@ class LCD (object):
         if self.pagemap:
             page = self.pagemap[page]
 
-        op = PAGE_SET | page
+        op = st7565.ops.PAGE_SET | page
         self.send_command([op])
 
     def column_set(self, col):
@@ -140,11 +139,11 @@ class LCD (object):
 
         # set column lsb
         lsb = (col & 0x0f)
-        self.send_command([COLUMN_SET_LSB | lsb])
+        self.send_command([st7565.ops.COLUMN_SET_LSB | lsb])
 
         # set column msb
         msb = (col & 0xf0) >> 4
-        self.send_command([COLUMN_SET_MSB | msb])
+        self.send_command([st7565.ops.COLUMN_SET_MSB | msb])
 
     def pos(self, page, col=0):
         '''Set the current page and column.  If unspecified, col defaults
@@ -185,42 +184,42 @@ class LCD (object):
 
     def send(self, bytes):
         '''Send bytes to the LCD via SPI protocol.'''
-        self.spi.writebytes(bytes)
+        self.spi.write(bytes)
 
     def soft_reset(self):
-        self.send_command([RESET])
+        self.send_command([st7565.ops.RESET])
 
     def display_on(self):
-        self.send_command([DISPLAY_ON])
+        self.send_command([st7565.ops.DISPLAY_ON])
 
     def display_off(self):
-        self.send_command([DISPLAY_OFF])
+        self.send_command([st7565.ops.DISPLAY_OFF])
 
     def display_points_on(self):
-        self.send_command([DISPLAY_ALL_POINTS_ON])
+        self.send_command([st7565.ops.DISPLAY_ALL_POINTS_ON])
 
     def display_points_normal(self):
-        self.send_command([DISPLAY_ALL_POINTS_NORMAL])
+        self.send_command([st7565.ops.DISPLAY_ALL_POINTS_NORMAL])
 
     def display_reverse(self):
-        self.send_command([DISPLAY_REVERSE])
+        self.send_command([st7565.ops.DISPLAY_REVERSE])
 
     def display_normal(self):
-        self.send_command([DISPLAY_NORMAL])
+        self.send_command([st7565.ops.DISPLAY_NORMAL])
 
     def adc_select(self, reverse=False):
-        op = ADC_SELECT | int(reverse)
+        op = st7565.ops.ADC_SELECT | int(reverse)
         self.send_command([op])
 
     def common_output_mode_select(self, reverse=False):
-        op = COMMON_OUTPUT_MODE_SELECT | (int(reverse) << 3)
+        op = st7565.ops.COMMON_OUTPUT_MODE_SELECT | (int(reverse) << 3)
         self.send_command([op])
 
     def bias_set(self, bias=BIAS_1_9):
         if bias not in [BIAS_1_9, BIAS_1_7]:
             raise ValueError(bias)
 
-        op = BIAS_SET | (int(bias))
+        op = st7565.ops.BIAS_SET | (int(bias))
         self.send_command([op])
 
     def power_control_set(self,
@@ -228,7 +227,7 @@ class LCD (object):
                           regulator=False,
                           follower=False):
 
-        op = (POWER_CONTROL_SET
+        op = (st7565.ops.POWER_CONTROL_SET
               | (int(converter) << 2)
               | (int(regulator) << 1)
               | (int(follower)))
@@ -239,24 +238,24 @@ class LCD (object):
         if ratio not in RESISTOR_RATIO:
             raise ValueError(ratio)
 
-        op = REGULATOR_RESISTOR_SET | RESISTOR_RATIO[ratio]
+        op = st7565.ops.REGULATOR_RESISTOR_SET | RESISTOR_RATIO[ratio]
         self.send_command([op])
 
     def display_start_line_set(self, line=0):
         if line > 64:
             raise ValueError(line)
 
-        op = DISPLAY_START_LINE_SET | line
+        op = st7565.ops.DISPLAY_START_LINE_SET | line
         self.send_command([op])
 
     def brightness_set(self, val):
-        self.send_command([BRIGHTNESS_SET, val])
+        self.send_command([st7565.ops.BRIGHTNESS_SET, val])
 
     def set_static_indicator(self, on=True, mode=STATIC_ALWAYS_ON):
         if mode not in range(0, 4):
             raise ValueError(mode)
 
-        op = STATIC_INDICATOR_SET | int(on)
+        op = st7565.ops.STATIC_INDICATOR_SET | int(on)
         self.send_command([op, mode])
 
     def sleep(self):
