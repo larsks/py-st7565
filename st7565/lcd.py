@@ -9,9 +9,6 @@ from st7565.ops import *
 
 LOG = logging.getLogger(__name__)
 
-commands = {
-}
-
 libc = ctypes.CDLL('libc.so.6')
 
 BRIGHTNESS = 0x20
@@ -40,12 +37,12 @@ RESISTOR_RATIO = {
 
 
 def delayus(us):
-    """ Delay microseconds with libc usleep() using ctypes. """
+    '''Delay microseconds with libc usleep() using ctypes.'''
     libc.usleep(int(us))
 
 
 def delayms(ms):
-    """ Delay microseconds with libc usleep() using ctypes. """
+    '''Delay microseconds with libc usleep() using ctypes.'''
     libc.usleep(int(ms) * 1000)
 
 
@@ -77,10 +74,6 @@ class LCD (object):
         self.init_gpio()
         self.init_spi()
         self.init_lcd()
-
-#    # XXX: This doesn't actually work as intended.
-#    def __del__(self):
-#        self.all_leds_off()
 
     def all_leds_off(self):
         self.backlight(1, 1, 1)
@@ -124,6 +117,7 @@ class LCD (object):
         self.clear()
 
     def clear(self):
+        '''Clear the display. Writes 0x00 to all display positions.'''
         for page in range(8):
             LOG.debug('clear page %d', page)
             self.page_set(page)
@@ -146,44 +140,51 @@ class LCD (object):
 
         # set column lsb
         lsb = (col & 0x0f)
-        op = COLUMN_SET_LSB | lsb
-        self.send_command([op])
+        self.send_command([COLUMN_SET_LSB | lsb])
 
         # set column msb
         msb = (col & 0xf0) >> 4
-        op = COLUMN_SET_MSB | msb
-        self.send_command([op])
+        self.send_command([COLUMN_SET_MSB | msb])
 
     def pos(self, page, col=0):
+        '''Set the current page and column.  If unspecified, col defaults
+        to 0.'''
         self.page_set(page)
         self.column_set(col)
 
-    def set_pin(self, pin):
+    def _set_pin(self, pin):
         GPIO.output(pin, 1)
 
-    def reset_pin(self, pin):
+    def _reset_pin(self, pin):
         GPIO.output(pin, 0)
 
     def reset(self):
+        '''Perform a hard reset of the LCD by bring the RST line low for
+        500 ms'''
         LOG.debug('hard reset')
-        self.reset_pin(self.lcd_rst)
+        self._reset_pin(self.lcd_rst)
         delayms(500)
-        self.set_pin(self.lcd_rst)
+        self._set_pin(self.lcd_rst)
         delayms(1)
 
     def send_command(self, bytes):
+        '''Send a command to the LCD.  Brings A0 low then sends the data
+        via SPI.'''
         LOG.debug('sending command: %s',
                   ' '.join(hex(x) for x in bytes))
-        self.reset_pin(self.lcd_a0)
+        self._reset_pin(self.lcd_a0)
         self.send(bytes)
 
     def send_data(self, bytes):
+        '''Send a command to the LCD.  Brings A0 high then sends the data
+        via SPI.'''
         LOG.debug('sending data: %s',
                   ' '.join(hex(x) for x in bytes))
-        self.set_pin(self.lcd_a0)
+        self._set_pin(self.lcd_a0)
         self.send(bytes)
 
     def send(self, bytes):
+        '''Send bytes to the LCD via SPI protocol.'''
         self.spi.writebytes(bytes)
 
     def soft_reset(self):
