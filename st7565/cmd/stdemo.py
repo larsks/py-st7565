@@ -78,11 +78,13 @@ def parse_args():
 
 
 def display_image(img):
+    '''Display an image on the LCD screen.'''
     screen.drawbitmap(img, centerx=True, centery=True)
     lcd.write_buffer(screen)
 
 
 def vscroll_image(img):
+    '''Display an image on the LCD screen and scroll it vertically.'''
     screen.drawbitmap(img, centerx=True, centery=True)
 
     while True:
@@ -92,6 +94,7 @@ def vscroll_image(img):
 
 
 def hscroll_image(img):
+    '''Display an image on the LCD screen and scroll it horizontally.'''
     screen.drawbitmap(img, centerx=True, centery=True)
 
     while True:
@@ -101,6 +104,7 @@ def hscroll_image(img):
 
 
 def spin_image(img):
+    '''Display an image on the LCD screen and spin it.'''
     lcd.pos(4, 24)
     lcd.puts('Generating frames...')
 
