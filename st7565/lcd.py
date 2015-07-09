@@ -5,7 +5,7 @@ import RPIO as GPIO
 
 import st7565.spidev
 import st7565.ops
-from st7565.fonts.font5x7 import glyphs as font5x7
+import st7565.fonts.font5x7 as font5x7
 
 LOG = logging.getLogger(__name__)
 
@@ -54,8 +54,7 @@ class LCD (object):
                  spi_bus=0,
                  spi_dev=0,
                  brightness=BRIGHTNESS,
-                 adafruit=False,
-                 flipped=False):
+                 adafruit=False):
 
         self.lcd_rst = lcd_rst
         self.lcd_a0 = lcd_a0
@@ -63,7 +62,6 @@ class LCD (object):
         self.spi_dev = spi_dev
         self.brightness = brightness
         self.adafruit = adafruit
-        self.flipped = flipped
 
         if adafruit:
             self.pagemap = [3, 2, 1, 0, 7, 6, 5, 4]
@@ -271,13 +269,8 @@ class LCD (object):
         self.set_static_indicator(True)
 
     def putc(self, c):
-        bytes = font5x7[ord(c) - 32]
-
-        if self.flipped:
-            bytes = [int('{:08b}'.format(x)[::-1], 2)
-                     for x in bytes]
-
-        self.send_data(bytes + [0x00])
+        bytes = font5x7.glyphs[ord(c) - font5x7.min_char]
+        self.send_data(bytes + [0x00] * (len(bytes)-font5x7.char_width))
 
     def puts(self, s):
         for c in s:
@@ -288,12 +281,10 @@ class LCD (object):
             self.page_set(p)
             self.column_set(0)
             bytes = buffer[128*p:128*p+128]
-            bytes = [int('{:08b}'.format(x)[::-1], 2)
-                     for x in bytes]
             self.send_data(bytes)
 
 
 if __name__ == '__main__':
     logging.basicConfig(
         level='DEBUG')
-    l = LCD(adafruit=True, flipped=True)
+    l = LCD(adafruit=True)
