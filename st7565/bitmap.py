@@ -1,4 +1,4 @@
-from PIL import Image
+import st7565.bitops as bitops
 
 
 class Bitmap (list):
@@ -67,6 +67,40 @@ class Bitmap (list):
                 pen = imgdata[(y*img_x) + x]
                 self.set_pixel(tx+x, ty+y, pen == 0)
 
+    def vscroll(self, steps=1):
+        for col in range(self.columns):
+            bits = self[col::self.columns]
+            if steps > 0:
+                self[col::self.columns] = bitops.rotater(bits, steps)
+            elif steps < 0:
+                self[col::self.columns] = bitops.rotatel(bits, abs(steps))
+
+    def hscroll(self, steps=1):
+        steps = 0-steps
+        for row in range(self.rows):
+            t = self[row * self.columns:(row * self.columns) + self.columns]
+            t = t[steps:] + t[:steps]
+            self[row * self.columns:(row * self.columns) + self.columns] = t
+
+    def dump(self):
+        lines = []
+        for row in range(self.rows):
+            t = self[row * self.columns:(row * self.columns) + self.columns]
+#            print 'ROW %d:' % row, t
+            for bit in range(8):
+                line = []
+                for col in t:
+                    val = int(((col) & (1 << (8-(bit+1)))) != 0)
+                    line.append(val)
+
+#                print 'BIT %d:' % bit, line
+                lines.append(''.join((str(x) for x in line)))
+
+        return '\n'.join(lines)
+
 
 if __name__ == '__main__':
-    b = Bitmap()
+    b = Bitmap(2,32)
+    b.set_pixel(0,0)
+    b.vscroll(1)
+    print b.dump()

@@ -40,12 +40,24 @@ def parse_args():
     g.add_argument('--pin-green', default=-1, type=int)
     g.add_argument('--pin-blue', default=-1, type=int)
 
-    p.add_argument('--spin', action='store_true')
+    g = p.add_argument_group('Animation options')
+    g.add_argument('--spin',
+                   action='store_const',
+                   const='spin',
+                   dest='animation')
+    g.add_argument('--hscroll',
+                   action='store_const',
+                   const='hscroll',
+                   dest='animation')
+    g.add_argument('--vscroll',
+                   action='store_const',
+                   const='vscroll',
+                   dest='animation')
+
     p.add_argument('--step', default=5, type=int)
     p.add_argument('--delay', default=0.001, type=float)
     p.add_argument('--adafruit', '-a',
                    action='store_true', default=False)
-    p.add_argument('--loop', action='store_true')
     p.add_argument('--pulse', action='store_true')
     p.add_argument('--wild', action='store_true')
     p.add_argument('image',
@@ -59,6 +71,24 @@ def parse_args():
 def display_image(img):
     screen.drawbitmap(img, centerx=True, centery=True)
     lcd.write_buffer(screen)
+
+
+def vscroll_image(img):
+    screen.drawbitmap(img)
+
+    while True:
+        screen.vscroll(args.step)
+        lcd.write_buffer(screen)
+        time.sleep(args.delay)
+
+
+def hscroll_image(img):
+    screen.drawbitmap(img)
+
+    while True:
+        screen.hscroll(args.step)
+        lcd.write_buffer(screen)
+        time.sleep(args.delay)
 
 
 def spin_image(img):
@@ -89,9 +119,6 @@ def spin_image(img):
             lcd.write_buffer(frame)
             time.sleep(args.delay)
 
-        if not args.loop:
-            break
-
 
 def main():
     global args, lcd, leds, screen
@@ -99,7 +126,7 @@ def main():
     args = parse_args()
 
     if args.wild:
-        args.spin = args.loop = args.pulse = True
+        args.spin = args.pulse = True
 
     lcd_kwargs = {}
     backlight_kwargs = {}
@@ -123,8 +150,12 @@ def main():
 
     leds.all_leds_on()
 
-    if args.spin:
+    if args.animation == 'spin':
         spin_image(img)
+    elif args.animation == 'hscroll':
+        hscroll_image(img)
+    elif args.animation == 'vscroll':
+        vscroll_image(img)
     else:
         display_image(img)
 
