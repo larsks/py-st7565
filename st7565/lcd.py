@@ -49,15 +49,15 @@ def delayms(ms):
 class LCD (object):
 
     def __init__(self,
-                 lcd_rst=LCD_RST,
-                 lcd_a0=LCD_A0,
+                 pin_rst=LCD_RST,
+                 pin_a0=LCD_A0,
                  spi_bus=0,
                  spi_dev=0,
                  brightness=BRIGHTNESS,
                  adafruit=False):
 
-        self.lcd_rst = lcd_rst
-        self.lcd_a0 = lcd_a0
+        self.pin_rst = pin_rst
+        self.pin_a0 = pin_a0
         self.spi_bus = spi_bus
         self.spi_dev = spi_dev
         self.brightness = brightness
@@ -81,7 +81,7 @@ class LCD (object):
 
     def init_gpio(self):
         GPIO.setmode(GPIO.BCM)
-        for pin in [self.lcd_rst, self.lcd_a0]:
+        for pin in [self.pin_rst, self.pin_a0]:
             GPIO.setup(pin, GPIO.OUT, initial=1)
 
     def init_spi(self):
@@ -159,9 +159,9 @@ class LCD (object):
         '''Perform a hard reset of the LCD by bring the RST line low for
         500 ms'''
         LOG.debug('hard reset')
-        self._reset_pin(self.lcd_rst)
+        self._reset_pin(self.pin_rst)
         delayms(500)
-        self._set_pin(self.lcd_rst)
+        self._set_pin(self.pin_rst)
         delayms(1)
 
     def send_command(self, bytes):
@@ -169,7 +169,7 @@ class LCD (object):
         via SPI.'''
         LOG.debug('sending command: %s',
                   ' '.join(hex(x) for x in bytes))
-        self._reset_pin(self.lcd_a0)
+        self._reset_pin(self.pin_a0)
         self.send(bytes)
 
     def send_data(self, bytes):
@@ -177,7 +177,7 @@ class LCD (object):
         via SPI.'''
         LOG.debug('sending data: %s',
                   ' '.join(hex(x) for x in bytes))
-        self._set_pin(self.lcd_a0)
+        self._set_pin(self.pin_a0)
         self.send(bytes)
 
     def send(self, bytes):

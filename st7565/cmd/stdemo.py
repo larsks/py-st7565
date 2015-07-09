@@ -33,6 +33,13 @@ def pulse():
 def parse_args():
     p = argparse.ArgumentParser()
 
+    g = p.add_argument_group('GPIO Configuration')
+    g.add_argument('--pin-a0', default=-1, type=int)
+    g.add_argument('--pin-rst', default=-1, type=int)
+    g.add_argument('--pin-red', default=-1, type=int)
+    g.add_argument('--pin-green', default=-1, type=int)
+    g.add_argument('--pin-blue', default=-1, type=int)
+
     p.add_argument('--spin', action='store_true')
     p.add_argument('--step', default=5, type=int)
     p.add_argument('--delay', default=0.001, type=float)
@@ -40,6 +47,7 @@ def parse_args():
                    action='store_true', default=False)
     p.add_argument('--loop', action='store_true')
     p.add_argument('--pulse', action='store_true')
+    p.add_argument('--wild', action='store_true')
     p.add_argument('image',
                    nargs='?',
                    default=resource_filename(
@@ -90,8 +98,25 @@ def main():
 
     args = parse_args()
 
-    lcd = st7565.lcd.LCD(adafruit=args.adafruit)
-    leds = st7565.backlight.Backlight()
+    if args.wild:
+        args.spin = args.loop = args.pulse = True
+
+    lcd_kwargs = {}
+    backlight_kwargs = {}
+
+    if args.pin_a0 != -1:
+        lcd_kwargs['pin_a0'] = args.pin_a0
+    if args.pin_rst != -1:
+        lcd_kwargs['pin_rst'] = args.pin_rst
+    if args.pin_red != -1:
+        backlight_kwargs['pin_red'] = args.pin_red
+    if args.pin_green != -1:
+        backlight_kwargs['pin_green'] = args.pin_green
+    if args.pin_blue != -1:
+        backlight_kwargs['pin_blue'] = args.pin_blue
+
+    lcd = st7565.lcd.LCD(adafruit=args.adafruit, **lcd_kwargs)
+    leds = st7565.backlight.Backlight(**backlight_kwargs)
     screen = st7565.bitmap.Bitmap()
 
     img = Image.open(args.image)
