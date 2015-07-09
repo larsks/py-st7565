@@ -54,6 +54,7 @@ class LCD (object):
                  spi_bus=0,
                  spi_dev=0,
                  brightness=BRIGHTNESS,
+                 init=True,
                  adafruit=False):
 
         self.pin_rst = pin_rst
@@ -68,10 +69,11 @@ class LCD (object):
         else:
             self.pagemap = None
 
-
-        self.init_gpio()
         self.init_spi()
-        self.init_lcd()
+        self.init_gpio()
+
+        if init:
+            self.init_lcd()
 
     def all_leds_off(self):
         self.backlight(1, 1, 1)
