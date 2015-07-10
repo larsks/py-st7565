@@ -75,12 +75,6 @@ class LCD (object):
         if init:
             self.init_lcd()
 
-    def all_leds_off(self):
-        self.backlight(1, 1, 1)
-
-    def all_leds_on(self):
-        self.backlight(0, 0, 0)
-
     def init_gpio(self):
         GPIO.setmode(GPIO.BCM)
         for pin in [self.pin_rst, self.pin_a0]:
