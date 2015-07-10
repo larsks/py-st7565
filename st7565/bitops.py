@@ -1,5 +1,7 @@
+'''A collection of misc. bit operations.'''
 
 def rotater(row, steps=1):
+    '''Rotate an array of integers one bit to the right.'''
     lost = 0
     mask = (0xff << steps & 0xff) ^ 0xff
     for i, b in enumerate(row[:]):
@@ -16,6 +18,7 @@ def rotater(row, steps=1):
 
 
 def rotatel(row, steps=1):
+    '''Rotate an array of integers one bit to the left.'''
     lost = 0
     mask = (0xff >> steps & 0xff) ^ 0xff
     for i, b in enumerate(row[:]):
@@ -29,7 +32,3 @@ def rotatel(row, steps=1):
         row[0] |= (lost >> (8-steps))
 
     return row
-
-
-def mirror(x):
-    return int('{:0b}'.format(x)[::-1], 2)
