@@ -1,9 +1,14 @@
+import logging
 import struct
+
+LOG = logging.getLogger(__name__)
 
 
 class SpiDev (object):
     '''This is a simple wrapper for accessing SPI devices using the Linux
-    spidev kernel driver.'''
+    spidev kernel driver, described at:
+
+    <https://www.kernel.org/doc/Documentation/spi/spi-summary>'''
 
     def __init__(self, bus, dev):
         self.bus = bus
@@ -13,6 +18,8 @@ class SpiDev (object):
         self.open()
 
     def open(self):
+        LOG.debug('opening SPI device %d.%d',
+                  self.bus, self.dev)
         assert(self.fd == -1)
         self.fd = open(
             '/dev/spidev%d.%d' % (self.bus, self.dev),
@@ -32,8 +39,16 @@ class SpiDev (object):
     writebytes = write
 
     def close(self):
+        LOG.debug('closing SPI device %d.%d',
+                  self.bus, self.dev)
         self.fd.close()
         self.fd = -1
 
     def fileno(self):
         return self.fd
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
