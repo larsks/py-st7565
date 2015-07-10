@@ -76,14 +76,20 @@ class LCD (object):
             self.init_lcd()
 
     def init_gpio(self):
+        '''Initialize GPIO configuration. Use BCM pin names
+        and configure RST and A0 outputs.'''
         GPIO.setmode(GPIO.BCM)
         for pin in [self.pin_rst, self.pin_a0]:
             GPIO.setup(pin, GPIO.OUT, initial=1)
 
     def init_spi(self):
+        '''Open connection to kernel SPI device.'''
         self.spi = st7565.spidev.SpiDev(self.spi_bus, self.spi_dev)
 
     def init_lcd(self):
+        '''Initialize the LCD.  Based on code from
+        <https://github.com/adafruit/ST7565-LCD/blob/master/c/stlcd.c>'''
+
         self.reset()
         self.soft_reset()
         self.bias_set(bias=BIAS_1_7)
@@ -121,6 +127,7 @@ class LCD (object):
         self.column_set(0)
 
     def page_set(self, page):
+        '''Set the current page.'''
         if self.pagemap:
             page = self.pagemap[page]
 
@@ -128,6 +135,7 @@ class LCD (object):
         self.send_command([op])
 
     def column_set(self, col):
+        '''Set the current column.'''
         if self.adafruit:
             col += 1
 
@@ -190,15 +198,19 @@ class LCD (object):
         self.send_command([st7565.ops.DISPLAY_OFF])
 
     def display_points_on(self):
+        '''Turn all pixels on.'''
         self.send_command([st7565.ops.DISPLAY_ALL_POINTS_ON])
 
     def display_points_normal(self):
+        '''Revert to normal display after `display_points_on`.'''
         self.send_command([st7565.ops.DISPLAY_ALL_POINTS_NORMAL])
 
     def display_reverse(self):
+        '''Reverse the display.'''
         self.send_command([st7565.ops.DISPLAY_REVERSE])
 
     def display_normal(self):
+        '''Return to normal display after `display_reverse`.'''
         self.send_command([st7565.ops.DISPLAY_NORMAL])
 
     def adc_select(self, reverse=False):
@@ -243,6 +255,7 @@ class LCD (object):
         self.send_command([op])
 
     def brightness_set(self, val):
+        '''Set the display brightness.'''
         self.send_command([st7565.ops.BRIGHTNESS_SET, val])
 
     def set_static_indicator(self, on=True, mode=STATIC_ALWAYS_ON):
@@ -253,11 +266,13 @@ class LCD (object):
         self.send_command([op, mode])
 
     def sleep(self):
+        '''Put the LCD to sleep.'''
         self.set_static_indicator(False, mode=STATIC_OFF)
         self.display_off()
         self.display_points_on()
 
     def wake(self):
+        '''Wake the LCD.'''
         self.soft_reset()
         self.brightness_set(self.brightness)
         self.display_points_normal()
@@ -265,14 +280,17 @@ class LCD (object):
         self.set_static_indicator(True)
 
     def putc(self, c):
+        '''Draw a single character at the current position.'''
         bytes = font5x7.glyphs[ord(c) - font5x7.min_char]
         self.send_data(bytes + [0x00] * (len(bytes)-font5x7.char_width))
 
     def puts(self, s):
+        '''Draw a string of characters at the current position.'''
         for c in s:
             self.putc(c)
 
     def write_buffer(self, buffer):
+        '''Write an entire 8x128 buffer to the LCD.'''
         for p in range(8):
             self.page_set(p)
             self.column_set(0)
