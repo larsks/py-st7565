@@ -10,35 +10,44 @@ LOG = logging.getLogger(__name__)
 
 
 class Backlight (object):
+    '''A class for controlling the LEDs on a ST7565 display with
+    RGB backlight.'''
+
     def __init__(self,
                  pin_red=LCD_RED,
                  pin_green=LCD_GREEN,
-                 pin_blue=LCD_BLUE,
-                 freq=100):
+                 pin_blue=LCD_BLUE):
         self.pin_red = pin_red
         self.pin_blue = pin_blue
         self.pin_green = pin_green
-        self.freq = freq
 
         self.init_gpio()
         self.init_pwm()
         self.all_leds_off()
 
     def init_gpio(self):
+        '''Initialize GPIO configuration.'''
+        LOG.debug('initializting GPIO configuration')
         GPIO.setmode(GPIO.BCM)
         for pin in [self.pin_red, self.pin_green, self.pin_blue]:
             GPIO.setup(pin, GPIO.OUT, initial=0)
 
     def init_pwm(self):
+        '''Initialize PWM configuration.  We are using RPIO.PWM to
+        implement software PWM via DMA, using the PCM implementation.  We
+        initalize three DMA channels, one for each color.'''
+        LOG.debug('initializting PWM configuration')
         PWM.setup(delay_hw=PWM.DELAY_VIA_PCM)
         PWM.set_loglevel(PWM.LOG_LEVEL_ERRORS)
         for ch in [0, 1, 2]:
             PWM.init_channel(ch)
 
     def all_leds_off(self):
+        '''Turn off all LEDs.'''
         self.backlight(0, 0, 0)
 
     def all_leds_on(self):
+        '''Turn on all LEDs.'''
         self.backlight(1, 1, 1)
 
     def _set_led(self, pin, pwm, val):
@@ -83,10 +92,7 @@ class Backlight (object):
                       val)
 
     def backlight(self, red, green, blue):
+        '''Set value for all three LEDs.'''
         self.red = red
         self.green = green
         self.blue = blue
-
-if __name__ == '__main__':
-
-    b = Backlight()
